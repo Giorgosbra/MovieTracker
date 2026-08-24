@@ -1,0 +1,26 @@
+from sqlmodel import Session, select
+
+from backend.app.models.user import User
+
+class UserRepository:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def get_user_by_email(self, email: str) -> User | None:
+        statement = select(User).where(User.email == email)
+        result = self.session.exec(statement).first()
+        return result
+
+    def get_user_by_username(self, username: str) -> User | None:
+        statement = select(User).where(User.username == username)
+        result = self.session.exec(statement).first()
+        return result
+
+    def create(self, user: User) -> User:
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
+
+
+    

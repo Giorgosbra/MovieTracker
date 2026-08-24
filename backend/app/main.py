@@ -1,10 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
+
+from backend.app.database.database import create_db_and_tables
+from backend.app.models import User, Movie
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
+    yield
+
 
 app = FastAPI(
     title="MovieTracker API",
     description="REST API for the MovieTracker application",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
+
 
 @app.get("/")
 def root():

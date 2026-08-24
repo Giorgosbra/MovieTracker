@@ -1,0 +1,51 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session
+
+from backend.app.database.database import get_session
+from backend.app.schemas.user import UserCreate, UserRead
+from backend.app.services.user_service import UserService
+
+
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authentication"]
+)
+
+
+@router.post(
+    "/register",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED
+)
+def register(
+    user_data: UserCreate,
+    session: Session = Depends(get_session)
+):
+    service = UserService(session)
+
+    try:
+        return service.register(user_data)
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error)
+        )
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    
