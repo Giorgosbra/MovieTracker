@@ -8,6 +8,7 @@ from backend.app.models import User, Movie
 from backend.app.api.auth import router as auth_router
 
 from backend.app.api.users import router as users_router
+from backend.app.api.movies import router as movies_router
 
 
 @asynccontextmanager
@@ -25,6 +26,7 @@ app = FastAPI(
 
 app.include_router(auth_router)
 app.include_router(users_router)
+app.include_router(movies_router)
 
 @app.get("/")
 def root():
