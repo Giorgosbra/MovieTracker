@@ -6,6 +6,14 @@ from pwdlib import PasswordHash
 from backend.app.core.config import settings
 
 
+from datetime import datetime, timedelta, timezone
+
+import jwt
+from pwdlib import PasswordHash
+
+from backend.app.core.config import settings
+
+
 password_hash = PasswordHash.recommended()
 
 
@@ -34,6 +42,25 @@ def create_access_token(user_id: int) -> str:
     )
 
     return token
+
+
+def decode_access_token(token: str) -> int:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+
+        user_id = payload.get("sub")
+
+        if user_id is None:
+            raise ValueError("Invalid token")
+
+        return int(user_id)
+
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, ValueError):
+        raise ValueError("Invalid or expired token")
 
 
 
