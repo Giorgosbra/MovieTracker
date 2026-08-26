@@ -1,11 +1,20 @@
+import { Navigate, Route, Routes } from 'react-router-dom'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import ProfilePage from './pages/ProfilePage'
+
 function App() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-      <h1 className="text-5xl font-bold">
-        MovieTracker
-      </h1>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+    </Routes>
   )
 }
 
 export default App
+
+
+
