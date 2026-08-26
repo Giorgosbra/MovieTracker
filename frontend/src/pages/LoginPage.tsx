@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+import AuthLayout from '../components/AuthLayout'
 import api from '../services/api'
 import type { LoginData, TokenResponse } from '../types/user'
 
@@ -48,25 +49,29 @@ function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
-      <div className="w-full max-w-md rounded-2xl bg-slate-900 p-8 shadow-xl">
-        <h1 className="mb-2 text-3xl font-bold">Welcome back</h1>
+    <AuthLayout showShowcase>
+      <div>
+        <div className="mb-10">
+          <h2 className="text-4xl font-bold">
+            Welcome back
+          </h2>
 
-        <p className="mb-6 text-slate-400">
-          Login to your MovieTracker account.
-        </p>
+          <p className="mt-3 text-base text-slate-400">
+            Sign in to continue tracking your movies.
+          </p>
+        </div>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+          <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="email"
-              className="mb-1 block text-sm font-medium text-slate-300"
+              className="mb-2 block text-sm font-medium text-slate-300"
             >
               Email
             </label>
@@ -82,14 +87,15 @@ function LoginPage() {
                 })
               }
               required
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 outline-none transition focus:border-blue-500"
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-4 text-base text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="mb-1 block text-sm font-medium text-slate-300"
+              className="mb-2 block text-sm font-medium text-slate-300"
             >
               Password
             </label>
@@ -105,30 +111,31 @@ function LoginPage() {
                 })
               }
               required
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 outline-none transition focus:border-blue-500"
+              placeholder="Enter your password"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-4 text-base text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-rose-600 px-5 py-4 text-base font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
-          Don't have an account?{' '}
+        <p className="mt-8 text-base text-slate-400">
+          New to MovieTracker?{' '}
           <Link
             to="/register"
-            className="font-medium text-blue-400 hover:text-blue-300"
+            className="font-semibold text-rose-400 transition hover:text-rose-300"
           >
-            Register
+            Create an account
           </Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   )
 }
 

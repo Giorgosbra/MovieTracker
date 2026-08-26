@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+import AuthLayout from '../components/AuthLayout'
 import api from '../services/api'
 import type { RegisterData, User } from '../types/user'
 
@@ -25,11 +26,12 @@ function RegisterPage() {
 
     try {
       await api.post<User>('/auth/register', formData)
-
       navigate('/login')
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        setError(error.response?.data?.detail || 'Registration failed')
+        setError(
+          error.response?.data?.detail || 'Registration failed',
+        )
       } else {
         setError('Something went wrong')
       }
@@ -39,25 +41,29 @@ function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
-      <div className="w-full max-w-md rounded-2xl bg-slate-900 p-8 shadow-xl">
-        <h1 className="mb-2 text-3xl font-bold">Create account</h1>
+    <AuthLayout showShowcase>
+      <div>
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold">
+            Create your account
+          </h2>
 
-        <p className="mb-6 text-slate-400">
-          Create your MovieTracker account.
-        </p>
+          <p className="mt-2 text-slate-400">
+            Start building your personal movie collection.
+          </p>
+        </div>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+          <div className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
               htmlFor="username"
-              className="mb-1 block text-sm font-medium text-slate-300"
+              className="mb-2 block text-sm font-medium text-slate-300"
             >
               Username
             </label>
@@ -73,14 +79,15 @@ function RegisterPage() {
                 })
               }
               required
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 outline-none transition focus:border-blue-500"
+              placeholder="Choose a username"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
           </div>
 
           <div>
             <label
               htmlFor="email"
-              className="mb-1 block text-sm font-medium text-slate-300"
+              className="mb-2 block text-sm font-medium text-slate-300"
             >
               Email
             </label>
@@ -96,14 +103,15 @@ function RegisterPage() {
                 })
               }
               required
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 outline-none transition focus:border-blue-500"
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="mb-1 block text-sm font-medium text-slate-300"
+              className="mb-2 block text-sm font-medium text-slate-300"
             >
               Password
             </label>
@@ -119,30 +127,31 @@ function RegisterPage() {
                 })
               }
               required
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 outline-none transition focus:border-blue-500"
+              placeholder="Create a password"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? 'Creating account...' : 'Register'}
+            {loading ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
+        <p className="mt-7 text-sm text-slate-400">
           Already have an account?{' '}
           <Link
             to="/login"
-            className="font-medium text-blue-400 hover:text-blue-300"
+            className="font-semibold text-rose-400 transition hover:text-rose-300"
           >
-            Login
+            Sign in
           </Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   )
 }
 
