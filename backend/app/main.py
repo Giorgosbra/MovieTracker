@@ -10,6 +10,8 @@ from backend.app.api.auth import router as auth_router
 from backend.app.api.users import router as users_router
 from backend.app.api.movies import router as movies_router
 
+from fastapi.middleware.cors import CORSMiddleware
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,3 +33,13 @@ app.include_router(movies_router)
 @app.get("/")
 def root():
     return {"message": "Welcome to the MovieTracker API!"}
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
