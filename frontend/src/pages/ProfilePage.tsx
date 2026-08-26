@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 import api from '../services/api'
 import type { User } from '../types/user'
@@ -9,15 +10,31 @@ function ProfilePage() {
 
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     const loadUser = async () => {
+      const token = localStorage.getItem('access_token')
+
+      if (!token) {
+        navigate('/login')
+        return
+      }
+
       try {
         const response = await api.get<User>('/users/me')
         setUser(response.data)
-      } catch {
-        localStorage.removeItem('access_token')
-        navigate('/login')
+      } catch (error) {
+        if (
+          axios.isAxiosError(error) &&
+          error.response?.status === 401
+        ) {
+          localStorage.removeItem('access_token')
+          navigate('/login')
+          return
+        }
+
+        setError('Could not load your profile.')
       } finally {
         setLoading(false)
       }
@@ -34,42 +51,78 @@ function ProfilePage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <p className="text-slate-400">Loading...</p>
+        <p className="text-slate-400">
+          Loading...
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
-      <div className="w-full max-w-md rounded-2xl bg-slate-900 p-8 shadow-xl">
-        <h1 className="mb-6 text-3xl font-bold">Profile</h1>
+    <div className="min-h-screen bg-slate-950 px-6 py-12 text-white">
+      <div className="mx-auto max-w-3xl">
 
-        {user && (
-          <div className="space-y-3">
-            <p>
-              <span className="text-slate-400">Username:</span>{' '}
-              {user.username}
-            </p>
+        <div className="mb-10">
+          <h1 className="text-4xl font-black">
+            Movie
+            <span className="text-rose-500">
+              Tracker
+            </span>
+          </h1>
 
-            <p>
-              <span className="text-slate-400">Email:</span>{' '}
-              {user.email}
-            </p>
+          <p className="mt-2 text-slate-400">
+            Your profile
+          </p>
+        </div>
 
-            <p>
-              <span className="text-slate-400">Role:</span>{' '}
-              {user.role}
-            </p>
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-red-400">
+            {error}
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="mt-8 w-full rounded-lg bg-red-600 px-4 py-3 font-semibold transition hover:bg-red-500"
-        >
-          Logout
-        </button>
+        {user && (
+          <div className="space-y-6">
+            <div>
+              <p className="text-sm text-slate-500">
+                Username
+              </p>
+
+              <p className="mt-1 text-xl font-semibold">
+                {user.username}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-slate-500">
+                Email
+              </p>
+
+              <p className="mt-1 text-xl font-semibold">
+                {user.email}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-slate-500">
+                Role
+              </p>
+
+              <p className="mt-1 text-xl font-semibold capitalize">
+                {user.role}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="mt-6 rounded-xl bg-rose-600 px-6 py-3 font-semibold transition hover:bg-rose-500"
+            >
+              Logout
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   )
