@@ -21,10 +21,6 @@ class MovieRead(SQLModel):
 
 
 class MovieUpdate(SQLModel):
-    title: str | None = None
-    description: str | None = None
-    release_year: int | None = None
-    genre: str | None = None
     status: str | None = None
     personal_rating: float | None = None
 
