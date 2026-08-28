@@ -12,6 +12,8 @@ from backend.app.api.movies import router as movies_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.app.api.admin import router as admin_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,9 +28,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(movies_router)
+app.include_router(admin_router)
+
 
 @app.get("/")
 def root():
