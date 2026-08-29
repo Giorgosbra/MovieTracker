@@ -504,7 +504,7 @@ function MoviesPage() {
 
 
         {movies.length > 0 && (
-          <div className="flex flex-wrap gap-5">
+          <div className="flex flex-wrap justify-center gap-5">
 
             {movies.map((movie) => {
               const poster =
