@@ -5,12 +5,14 @@ import {
 } from 'react-router-dom'
 
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import MoviesPage from './pages/MoviesPage'
 import DiscoverMoviesPage from './pages/DiscoverMoviesPage'
 import ProfilePage from './pages/ProfilePage'
+import AdminPage from './pages/AdminPage'
 
 
 function App() {
@@ -71,6 +73,18 @@ function App() {
 
 
       <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+
+
+      <Route
         path="*"
         element={
           <Navigate
@@ -86,6 +100,7 @@ function App() {
 
 
 export default App
+
 
 
 
