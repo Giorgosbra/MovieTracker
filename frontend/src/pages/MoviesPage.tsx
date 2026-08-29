@@ -3,37 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 import api from '../services/api'
-import type { Movie } from '../types/movie'
+import { movieCatalog } from '../data/movieCatalog'
 
-
-const posterMap: Record<string, string> = {
-  interstellar: '/auth-posters/interstellar.jpg',
-  inception: '/auth-posters/inception.jpg',
-
-  'the dark knight':
-    '/auth-posters/the_dark_knight.jpg',
-
-  'project hail mary':
-    '/auth-posters/project_hail_mary.jpg',
-
-  odyssey:
-    '/auth-posters/odyssey.jpg',
-
-  'spider-man: brand new day':
-    '/auth-posters/spiderman_brand_new_day.jpg',
-
-  'spiderman brand new day':
-    '/auth-posters/spiderman_brand_new_day.jpg',
-
-  'the conjuring 4':
-    '/auth-posters/conjuring_4.jpg',
-
-  obsession:
-    '/auth-posters/obsession.jpg',
-
-  'forrest gump':
-    '/auth-posters/forrest_gump.jpg',
-}
+import type {
+  Movie,
+  MovieUpdate,
+} from '../types/movie'
 
 
 function MoviesPage() {
@@ -54,12 +29,39 @@ function MoviesPage() {
   const [error, setError] =
     useState('')
 
+  const [actionError, setActionError] =
+    useState('')
+
+  const [isEditing, setIsEditing] =
+    useState(false)
+
+  const [editStatus, setEditStatus] =
+    useState<'watchlist' | 'watched'>(
+      'watchlist',
+    )
+
+  const [editRating, setEditRating] =
+    useState<number | null>(null)
+
+  const [saving, setSaving] =
+    useState(false)
+
+  const [removing, setRemoving] =
+    useState(false)
+
+  const [
+    showRemoveConfirm,
+    setShowRemoveConfirm,
+  ] = useState(false)
+
 
   useEffect(() => {
     const loadMovies = async () => {
       try {
         const response =
-          await api.get<Movie[]>('/movies')
+          await api.get<Movie[]>(
+            '/movies',
+          )
 
         setMovies(response.data)
       } catch (error) {
@@ -97,11 +99,18 @@ function MoviesPage() {
 
 
   const getPoster = (
-    title: string,
+    movie: Movie,
   ) => {
-    return posterMap[
-      title.toLowerCase()
-    ]
+    const catalogMovie =
+      movieCatalog.find(
+        (item) =>
+          item.title.toLowerCase() ===
+            movie.title.toLowerCase() &&
+          item.release_year ===
+            movie.release_year,
+      )
+
+    return catalogMovie?.poster
   }
 
 
@@ -109,17 +118,256 @@ function MoviesPage() {
     movie: Movie,
   ) => {
     setIsClosing(false)
+
     setSelectedMovie(movie)
+
+    setEditStatus(
+      movie.status === 'watched'
+        ? 'watched'
+        : 'watchlist',
+    )
+
+    setEditRating(
+      movie.personal_rating,
+    )
+
+    setIsEditing(false)
+    setShowRemoveConfirm(false)
+    setActionError('')
   }
 
 
   const closeMovie = () => {
+    if (saving || removing) {
+      return
+    }
+
     setIsClosing(true)
 
     setTimeout(() => {
       setSelectedMovie(null)
       setIsClosing(false)
+      setIsEditing(false)
+      setShowRemoveConfirm(false)
+      setActionError('')
     }, 250)
+  }
+
+
+  const startEditing = () => {
+    if (!selectedMovie) {
+      return
+    }
+
+    setActionError('')
+    setShowRemoveConfirm(false)
+
+    setEditStatus(
+      selectedMovie.status === 'watched'
+        ? 'watched'
+        : 'watchlist',
+    )
+
+    setEditRating(
+      selectedMovie.personal_rating,
+    )
+
+    setIsEditing(true)
+  }
+
+
+  const cancelEditing = () => {
+    setIsEditing(false)
+    setActionError('')
+  }
+
+
+  const decreaseRating = () => {
+    if (editStatus !== 'watched') {
+      return
+    }
+
+    setEditRating((currentRating) => {
+      const rating =
+        currentRating ?? 0
+
+      return Math.max(
+        0,
+        rating - 0.5,
+      )
+    })
+  }
+
+
+  const increaseRating = () => {
+    if (editStatus !== 'watched') {
+      return
+    }
+
+    setEditRating((currentRating) => {
+      const rating =
+        currentRating ?? 0
+
+      return Math.min(
+        10,
+        rating + 0.5,
+      )
+    })
+  }
+
+
+  const handleSave = async () => {
+    if (!selectedMovie) {
+      return
+    }
+
+    setActionError('')
+
+
+    const movieData: MovieUpdate = {
+      status: editStatus,
+
+      personal_rating:
+        editStatus === 'watched'
+          ? editRating
+          : null,
+    }
+
+
+    setSaving(true)
+
+
+    try {
+      const response =
+        await api.patch<Movie>(
+          `/movies/${selectedMovie.id}`,
+          movieData,
+        )
+
+      const updatedMovie =
+        response.data
+
+
+      setMovies(
+        (currentMovies) =>
+          currentMovies.map(
+            (movie) =>
+              movie.id ===
+              updatedMovie.id
+                ? updatedMovie
+                : movie,
+          ),
+      )
+
+
+      setSelectedMovie(
+        updatedMovie,
+      )
+
+      setIsEditing(false)
+    } catch (error) {
+      if (
+        axios.isAxiosError(error)
+      ) {
+        if (
+          error.response?.status ===
+          401
+        ) {
+          localStorage.removeItem(
+            'access_token',
+          )
+
+          navigate('/login')
+          return
+        }
+
+        const detail =
+          error.response?.data?.detail
+
+        setActionError(
+          typeof detail === 'string'
+            ? detail
+            : 'Could not update movie.',
+        )
+
+        return
+      }
+
+      setActionError(
+        'Something went wrong.',
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+
+  const handleRemove = async () => {
+    if (!selectedMovie) {
+      return
+    }
+
+    setRemoving(true)
+    setActionError('')
+
+
+    try {
+      await api.delete(
+        `/movies/${selectedMovie.id}`,
+      )
+
+
+      setMovies(
+        (currentMovies) =>
+          currentMovies.filter(
+            (movie) =>
+              movie.id !==
+              selectedMovie.id,
+          ),
+      )
+
+
+      setIsClosing(true)
+
+      setTimeout(() => {
+        setSelectedMovie(null)
+        setIsClosing(false)
+        setShowRemoveConfirm(false)
+      }, 250)
+    } catch (error) {
+      if (
+        axios.isAxiosError(error)
+      ) {
+        if (
+          error.response?.status ===
+          401
+        ) {
+          localStorage.removeItem(
+            'access_token',
+          )
+
+          navigate('/login')
+          return
+        }
+
+        const detail =
+          error.response?.data?.detail
+
+        setActionError(
+          typeof detail === 'string'
+            ? detail
+            : 'Could not remove movie.',
+        )
+
+        return
+      }
+
+      setActionError(
+        'Something went wrong.',
+      )
+    } finally {
+      setRemoving(false)
+    }
   }
 
 
@@ -158,7 +406,6 @@ function MoviesPage() {
 
         <div className="relative flex w-full items-center justify-between px-6 py-6 lg:px-8 xl:px-10">
 
-          {/* Logo */}
           <div className="text-4xl font-black tracking-tight lg:text-5xl">
             Movie
             <span className="text-rose-500">
@@ -178,6 +425,7 @@ function MoviesPage() {
             >
               Profile
             </button>
+
 
             <button
               type="button"
@@ -232,7 +480,6 @@ function MoviesPage() {
         </div>
 
 
-        {/* Error */}
         {error && (
           <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-red-400">
             {error}
@@ -240,7 +487,6 @@ function MoviesPage() {
         )}
 
 
-        {/* Empty collection */}
         {!error &&
           movies.length === 0 && (
             <div className="py-24 text-center">
@@ -257,13 +503,12 @@ function MoviesPage() {
           )}
 
 
-        {/* Movies */}
         {movies.length > 0 && (
           <div className="flex flex-wrap gap-5">
 
             {movies.map((movie) => {
               const poster =
-                getPoster(movie.title)
+                getPoster(movie)
 
               return (
                 <button
@@ -282,7 +527,7 @@ function MoviesPage() {
                       {poster ? (
                         <img
                           src={poster}
-                          alt=""
+                          alt={movie.title}
                           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         />
                       ) : (
@@ -299,9 +544,13 @@ function MoviesPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-85" />
 
 
-                      {movie.personal_rating !== null && (
+                      {movie.personal_rating !==
+                        null && (
                         <div className="absolute right-2.5 top-2.5 rounded-lg bg-black/70 px-2 py-1 text-xs font-bold text-amber-300 backdrop-blur">
-                          ★ {movie.personal_rating}
+                          ★{' '}
+                          {
+                            movie.personal_rating
+                          }
                         </div>
                       )}
 
@@ -312,10 +561,13 @@ function MoviesPage() {
                           {movie.title}
                         </h2>
 
+
                         <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-300">
 
                           <span>
-                            {movie.release_year}
+                            {
+                              movie.release_year
+                            }
                           </span>
 
                           <span className="text-slate-600">
@@ -370,8 +622,11 @@ function MoviesPage() {
             <button
               type="button"
               onClick={closeMovie}
+              disabled={
+                saving || removing
+              }
               aria-label="Close movie details"
-              className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/60 text-xl text-white transition duration-200 hover:scale-110 hover:border-rose-500 hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-600/20 active:scale-95"
+              className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/60 text-xl text-white transition duration-200 hover:scale-110 hover:border-rose-500 hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-600/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
               ×
             </button>
@@ -383,20 +638,24 @@ function MoviesPage() {
               <div className="relative min-h-[420px] bg-slate-900">
 
                 {getPoster(
-                  selectedMovie.title,
+                  selectedMovie,
                 ) ? (
                   <img
                     src={getPoster(
-                      selectedMovie.title,
+                      selectedMovie,
                     )}
-                    alt=""
+                    alt={
+                      selectedMovie.title
+                    }
                     className="h-full w-full object-cover"
                   />
                 ) : (
                   <div className="flex h-full min-h-[420px] items-center justify-center bg-gradient-to-br from-slate-800 to-rose-950/50 p-8">
 
                     <span className="text-center text-3xl font-black text-white/30">
-                      {selectedMovie.title}
+                      {
+                        selectedMovie.title
+                      }
                     </span>
 
                   </div>
@@ -435,20 +694,23 @@ function MoviesPage() {
                     selectedMovie.release_year
                   }
                   {' · '}
-                  {selectedMovie.genre}
+                  {
+                    selectedMovie.genre
+                  }
                 </p>
 
 
-                {selectedMovie.personal_rating !==
-                  null && (
-                  <p className="mt-5 text-lg font-semibold text-amber-300">
-                    ★{' '}
-                    {
-                      selectedMovie.personal_rating
-                    }{' '}
-                    / 10
-                  </p>
-                )}
+                {!isEditing &&
+                  selectedMovie.personal_rating !==
+                    null && (
+                    <p className="mt-5 text-lg font-semibold text-amber-300">
+                      ★{' '}
+                      {
+                        selectedMovie.personal_rating
+                      }{' '}
+                      / 10
+                    </p>
+                  )}
 
 
                 <p className="mt-6 leading-7 text-slate-300">
@@ -457,23 +719,287 @@ function MoviesPage() {
                 </p>
 
 
-                <div className="mt-10 flex gap-3">
+                {/* Edit mode */}
+                {isEditing && (
+                  <div className="mt-8 space-y-5 rounded-xl border border-slate-800 bg-slate-900/40 p-5">
 
-                  <button
-                    type="button"
-                    className="rounded-xl bg-rose-600 px-5 py-3 font-semibold transition hover:bg-rose-500"
-                  >
-                    Edit rating
-                  </button>
+                    {/* Status */}
+                    <div>
 
-                  <button
-                    type="button"
-                    className="rounded-xl border border-slate-700 px-5 py-3 font-semibold text-slate-300 transition hover:border-red-500 hover:text-red-400"
-                  >
-                    Remove
-                  </button>
+                      <label
+                        htmlFor="edit-status"
+                        className="mb-2 block text-sm font-medium text-slate-300"
+                      >
+                        Status
+                      </label>
 
-                </div>
+
+                      <select
+                        id="edit-status"
+                        value={
+                          editStatus
+                        }
+                        onChange={(
+                          event,
+                        ) => {
+                          const status =
+                            event.target
+                              .value as
+                              | 'watchlist'
+                              | 'watched'
+
+                          setEditStatus(
+                            status,
+                          )
+
+                          if (
+                            status ===
+                            'watchlist'
+                          ) {
+                            setEditRating(
+                              null,
+                            )
+                          }
+                        }}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+                      >
+
+                        <option value="watchlist">
+                          Watchlist
+                        </option>
+
+                        <option value="watched">
+                          Watched
+                        </option>
+
+                      </select>
+
+                    </div>
+
+
+                    {/* Custom rating */}
+                    <div>
+
+                      <label className="mb-2 block text-sm font-medium text-slate-300">
+                        Personal rating
+                      </label>
+
+
+                      <div
+                        className={`flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 transition ${
+                          editStatus ===
+                          'watched'
+                            ? 'hover:border-slate-600'
+                            : 'opacity-40'
+                        }`}
+                      >
+
+                        {/* Decrease */}
+                        <button
+                          type="button"
+                          onClick={
+                            decreaseRating
+                          }
+                          disabled={
+                            editStatus !==
+                              'watched' ||
+                            editRating === 0
+                          }
+                          className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-2xl font-semibold text-rose-400 transition duration-200 hover:scale-105 hover:border-rose-500 hover:bg-rose-600 hover:text-white hover:shadow-lg hover:shadow-rose-600/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100 disabled:hover:border-slate-700 disabled:hover:bg-slate-900 disabled:hover:text-rose-400 disabled:hover:shadow-none"
+                        >
+                          −
+                        </button>
+
+
+                        {/* Rating number */}
+                        <div className="flex min-w-[140px] items-baseline justify-center gap-1">
+
+                          <span className="text-3xl font-black text-white">
+
+                            {editStatus ===
+                            'watched'
+                              ? (
+                                  editRating ??
+                                  0
+                                ).toFixed(
+                                  1,
+                                )
+                              : '—'}
+
+                          </span>
+
+
+                          {editStatus ===
+                            'watched' && (
+                            <span className="text-sm font-semibold text-slate-500">
+                              / 10
+                            </span>
+                          )}
+
+                        </div>
+
+
+                        {/* Increase */}
+                        <button
+                          type="button"
+                          onClick={
+                            increaseRating
+                          }
+                          disabled={
+                            editStatus !==
+                              'watched' ||
+                            editRating === 10
+                          }
+                          className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-2xl font-semibold text-rose-400 transition duration-200 hover:scale-105 hover:border-rose-500 hover:bg-rose-600 hover:text-white hover:shadow-lg hover:shadow-rose-600/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100 disabled:hover:border-slate-700 disabled:hover:bg-slate-900 disabled:hover:text-rose-400 disabled:hover:shadow-none"
+                        >
+                          +
+                        </button>
+
+                      </div>
+
+
+                      {editStatus ===
+                        'watchlist' && (
+                        <p className="mt-2 text-xs text-slate-500">
+                          Mark the movie as watched to add a rating.
+                        </p>
+                      )}
+
+                    </div>
+
+
+                    {/* Save / Cancel */}
+                    <div className="flex gap-3">
+
+                      <button
+                        type="button"
+                        onClick={
+                          handleSave
+                        }
+                        disabled={
+                          saving
+                        }
+                        className="rounded-xl bg-rose-600 px-5 py-3 text-sm font-semibold transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {saving
+                          ? 'Saving...'
+                          : 'Save'}
+                      </button>
+
+
+                      <button
+                        type="button"
+                        onClick={
+                          cancelEditing
+                        }
+                        disabled={
+                          saving
+                        }
+                        className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+
+                    </div>
+
+                  </div>
+                )}
+
+
+                {/* Normal actions */}
+                {!isEditing &&
+                  !showRemoveConfirm && (
+                    <div className="mt-10 flex gap-3">
+
+                      <button
+                        type="button"
+                        onClick={
+                          startEditing
+                        }
+                        className="rounded-xl bg-rose-600 px-5 py-3 font-semibold transition hover:bg-rose-500"
+                      >
+                        Edit rating
+                      </button>
+
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActionError(
+                            '',
+                          )
+
+                          setShowRemoveConfirm(
+                            true,
+                          )
+                        }}
+                        className="rounded-xl border border-slate-700 px-5 py-3 font-semibold text-slate-300 transition hover:border-red-500 hover:text-red-400"
+                      >
+                        Remove
+                      </button>
+
+                    </div>
+                  )}
+
+
+                {/* Remove confirmation */}
+                {!isEditing &&
+                  showRemoveConfirm && (
+                    <div className="mt-10 rounded-xl border border-red-500/20 bg-red-500/5 p-5">
+
+                      <p className="text-sm font-medium text-slate-200">
+                        Remove this movie from your collection?
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        You can add it again later from Discover.
+                      </p>
+
+
+                      <div className="mt-4 flex gap-3">
+
+                        <button
+                          type="button"
+                          onClick={
+                            handleRemove
+                          }
+                          disabled={
+                            removing
+                          }
+                          className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {removing
+                            ? 'Removing...'
+                            : 'Remove'}
+                        </button>
+
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowRemoveConfirm(
+                              false,
+                            )
+                          }
+                          disabled={
+                            removing
+                          }
+                          className="rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+
+                      </div>
+
+                    </div>
+                  )}
+
+
+                {actionError && (
+                  <p className="mt-4 text-sm text-red-400">
+                    {actionError}
+                  </p>
+                )}
 
               </div>
 
@@ -490,17 +1016,6 @@ function MoviesPage() {
 
 
 export default MoviesPage
-
-
-
-
-
-
-
-
-
-
-
 
 
 

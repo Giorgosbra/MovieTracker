@@ -1,34 +1,99 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+
+import api from '../services/api'
 
 import {
   movieCatalog,
   type CatalogMovie,
 } from '../data/movieCatalog'
 
+import type { Movie } from '../types/movie'
+
 
 function DiscoverMoviesPage() {
   const navigate = useNavigate()
 
-  const [search, setSearch] = useState('')
+  const [search, setSearch] =
+    useState('')
 
-  const [selectedMovie, setSelectedMovie] =
-    useState<CatalogMovie | null>(null)
+  const [
+    selectedMovie,
+    setSelectedMovie,
+  ] = useState<CatalogMovie | null>(
+    null,
+  )
+
+  const [userMovies, setUserMovies] =
+    useState<Movie[]>([])
 
   const [isClosing, setIsClosing] =
     useState(false)
 
+  const [loading, setLoading] =
+    useState(true)
 
-  const filteredMovies = movieCatalog.filter(
-    (movie) =>
+  const [
+    addingMovieId,
+    setAddingMovieId,
+  ] = useState<number | null>(null)
+
+  const [error, setError] =
+    useState('')
+
+
+  useEffect(() => {
+    const loadUserMovies = async () => {
+      try {
+        const response =
+          await api.get<Movie[]>(
+            '/movies',
+          )
+
+        setUserMovies(response.data)
+      } catch (error) {
+        if (
+          axios.isAxiosError(error) &&
+          error.response?.status === 401
+        ) {
+          localStorage.removeItem(
+            'access_token',
+          )
+
+          navigate('/login')
+          return
+        }
+
+        setError(
+          'Could not load your collection.',
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadUserMovies()
+  }, [navigate])
+
+
+  const filteredMovies =
+    movieCatalog.filter((movie) =>
       movie.title
         .toLowerCase()
-        .includes(search.trim().toLowerCase()),
-  )
+        .includes(
+          search
+            .trim()
+            .toLowerCase(),
+        ),
+    )
 
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token')
+    localStorage.removeItem(
+      'access_token',
+    )
+
     navigate('/login')
   }
 
@@ -36,6 +101,7 @@ function DiscoverMoviesPage() {
   const openMovie = (
     movie: CatalogMovie,
   ) => {
+    setError('')
     setIsClosing(false)
     setSelectedMovie(movie)
   }
@@ -47,8 +113,110 @@ function DiscoverMoviesPage() {
     setTimeout(() => {
       setSelectedMovie(null)
       setIsClosing(false)
+      setError('')
     }, 250)
   }
+
+
+  const getUserMovie = (
+    catalogMovie: CatalogMovie,
+  ) => {
+    return userMovies.find(
+      (movie) =>
+        movie.title.toLowerCase() ===
+          catalogMovie.title.toLowerCase() &&
+        movie.release_year ===
+          catalogMovie.release_year,
+    )
+  }
+
+
+  const handleAddMovie = async (
+    movie: CatalogMovie,
+  ) => {
+    if (getUserMovie(movie)) {
+      return
+    }
+
+    setAddingMovieId(movie.id)
+    setError('')
+
+    try {
+      const response =
+        await api.post<Movie>(
+          '/movies',
+          {
+            title: movie.title,
+            description:
+              movie.description,
+            release_year:
+              movie.release_year,
+            genre: movie.genre,
+            status: 'watchlist',
+            personal_rating: null,
+          },
+        )
+
+      setUserMovies(
+        (currentMovies) => [
+          ...currentMovies,
+          response.data,
+        ],
+      )
+    } catch (error) {
+      if (
+        axios.isAxiosError(error)
+      ) {
+        if (
+          error.response?.status ===
+          401
+        ) {
+          localStorage.removeItem(
+            'access_token',
+          )
+
+          navigate('/login')
+          return
+        }
+
+        const detail =
+          error.response?.data?.detail
+
+        setError(
+          typeof detail === 'string'
+            ? detail
+            : 'Could not add movie.',
+        )
+
+        return
+      }
+
+      setError(
+        'Something went wrong.',
+      )
+    } finally {
+      setAddingMovieId(null)
+    }
+  }
+
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+
+        <p className="text-slate-400">
+          Loading movies...
+        </p>
+
+      </div>
+    )
+  }
+
+
+  const selectedUserMovie =
+    selectedMovie
+      ? getUserMovie(selectedMovie)
+      : undefined
 
 
   return (
@@ -86,19 +254,25 @@ function DiscoverMoviesPage() {
 
             <button
               type="button"
-              onClick={() => navigate('/movies')}
+              onClick={() =>
+                navigate('/movies')
+              }
               className="text-sm font-medium text-slate-300 transition hover:text-white"
             >
               My Movies
             </button>
 
+
             <button
               type="button"
-              onClick={() => navigate('/profile')}
+              onClick={() =>
+                navigate('/profile')
+              }
               className="text-sm font-medium text-slate-300 transition hover:text-white"
             >
               Profile
             </button>
+
 
             <button
               type="button"
@@ -125,9 +299,11 @@ function DiscoverMoviesPage() {
             Discover
           </p>
 
+
           <h1 className="text-4xl font-black">
             Discover Movies
           </h1>
+
 
           <p className="mt-2 text-sm text-slate-400">
             Find your next movie and add it to your collection.
@@ -145,11 +321,14 @@ function DiscoverMoviesPage() {
               ⌕
             </span>
 
+
             <input
               type="text"
               value={search}
               onChange={(event) =>
-                setSearch(event.target.value)
+                setSearch(
+                  event.target.value,
+                )
               }
               placeholder="Search for a movie..."
               className="w-full rounded-xl border border-slate-700 bg-slate-900/70 py-3.5 pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
@@ -188,64 +367,89 @@ function DiscoverMoviesPage() {
         )}
 
 
-        {/* Movie catalogue */}
+        {/* Catalogue */}
         {filteredMovies.length > 0 && (
           <div className="flex flex-wrap justify-center gap-4">
 
-            {filteredMovies.map((movie) => (
-              <button
-                key={movie.id}
-                type="button"
-                onClick={() => openMovie(movie)}
-                className="group w-[160px] text-left sm:w-[170px]"
-              >
+            {filteredMovies.map(
+              (movie) => {
+                const isInCollection =
+                  Boolean(
+                    getUserMovie(movie),
+                  )
 
-                <article className="relative overflow-hidden rounded-xl bg-slate-900 shadow-lg transition duration-300 group-hover:-translate-y-2 group-hover:scale-[1.03] group-hover:shadow-2xl group-hover:shadow-rose-950/30">
+                return (
+                  <button
+                    key={movie.id}
+                    type="button"
+                    onClick={() =>
+                      openMovie(movie)
+                    }
+                    className="group w-[160px] text-left sm:w-[170px]"
+                  >
 
-                  {/* Poster */}
-                  <div className="relative aspect-[3/4] overflow-hidden bg-slate-900">
+                    <article className="relative overflow-hidden rounded-xl bg-slate-900 shadow-lg transition duration-300 group-hover:-translate-y-2 group-hover:scale-[1.03] group-hover:shadow-2xl group-hover:shadow-rose-950/30">
 
-                    <img
-                      src={movie.poster}
-                      alt={movie.title}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
+                      <div className="relative aspect-[3/4] overflow-hidden bg-slate-900">
+
+                        <img
+                          src={movie.poster}
+                          alt={
+                            movie.title
+                          }
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
 
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-85" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-85" />
 
 
-                    {/* Movie information */}
-                    <div className="absolute inset-x-0 bottom-0 p-3">
+                        {isInCollection && (
+                          <div className="absolute right-2.5 top-2.5 rounded-lg bg-emerald-500/90 px-2 py-1 text-[10px] font-bold text-white shadow-lg">
+                            ✓ Added
+                          </div>
+                        )}
 
-                      <h2 className="text-sm font-bold text-white">
-                        {movie.title}
-                      </h2>
 
-                      <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-300">
+                        <div className="absolute inset-x-0 bottom-0 p-3">
 
-                        <span>
-                          {movie.release_year}
-                        </span>
+                          <h2 className="text-sm font-bold text-white">
+                            {
+                              movie.title
+                            }
+                          </h2>
 
-                        <span className="text-slate-600">
-                          •
-                        </span>
 
-                        <span>
-                          {movie.genre}
-                        </span>
+                          <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-300">
+
+                            <span>
+                              {
+                                movie.release_year
+                              }
+                            </span>
+
+                            <span className="text-slate-600">
+                              •
+                            </span>
+
+                            <span>
+                              {
+                                movie.genre
+                              }
+                            </span>
+
+                          </div>
+
+                        </div>
 
                       </div>
 
-                    </div>
+                    </article>
 
-                  </div>
-
-                </article>
-
-              </button>
-            ))}
+                  </button>
+                )
+              },
+            )}
 
           </div>
         )}
@@ -292,8 +496,12 @@ function DiscoverMoviesPage() {
               <div className="relative min-h-[420px] bg-slate-900">
 
                 <img
-                  src={selectedMovie.poster}
-                  alt={selectedMovie.title}
+                  src={
+                    selectedMovie.poster
+                  }
+                  alt={
+                    selectedMovie.title
+                  }
                   className="h-full w-full object-cover"
                 />
 
@@ -305,39 +513,88 @@ function DiscoverMoviesPage() {
               {/* Information */}
               <div className="flex flex-col justify-center p-8 md:p-10">
 
-                <span className="w-fit rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-400">
-                  Discover
+                <span
+                  className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                    selectedUserMovie
+                      ? 'bg-emerald-500/10 text-emerald-400'
+                      : 'bg-rose-500/10 text-rose-400'
+                  }`}
+                >
+                  {selectedUserMovie
+                    ? 'In your collection'
+                    : 'Discover'}
                 </span>
 
 
                 <h2 className="mt-5 text-4xl font-black">
-                  {selectedMovie.title}
+                  {
+                    selectedMovie.title
+                  }
                 </h2>
 
 
                 <p className="mt-2 text-slate-400">
-                  {selectedMovie.release_year}
+                  {
+                    selectedMovie.release_year
+                  }
                   {' · '}
-                  {selectedMovie.genre}
+                  {
+                    selectedMovie.genre
+                  }
                 </p>
 
 
                 <p className="mt-6 leading-7 text-slate-300">
-                  {selectedMovie.description}
+                  {
+                    selectedMovie.description
+                  }
                 </p>
 
 
-                {/* Add */}
+                {/* Actions */}
                 <div className="mt-10">
 
-                  <button
-                    type="button"
-                    className="rounded-xl bg-rose-600 px-6 py-3 font-semibold transition hover:bg-rose-500"
-                  >
-                    + Add to collection
-                  </button>
+                  {!selectedUserMovie ? (
+                    <button
+                      type="button"
+                      disabled={
+                        addingMovieId ===
+                        selectedMovie.id
+                      }
+                      onClick={() =>
+                        handleAddMovie(
+                          selectedMovie,
+                        )
+                      }
+                      className="rounded-xl bg-rose-600 px-6 py-3 font-semibold transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {addingMovieId ===
+                      selectedMovie.id
+                        ? 'Adding...'
+                        : '+ Add to collection'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          '/movies',
+                        )
+                      }
+                      className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 font-semibold text-emerald-400 transition hover:bg-emerald-500/20"
+                    >
+                      In collection
+                    </button>
+                  )}
 
                 </div>
+
+
+                {error && (
+                  <p className="mt-4 text-sm text-red-400">
+                    {error}
+                  </p>
+                )}
 
               </div>
 
@@ -354,22 +611,6 @@ function DiscoverMoviesPage() {
 
 
 export default DiscoverMoviesPage
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
