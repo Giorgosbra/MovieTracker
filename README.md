@@ -18,6 +18,8 @@ The application also includes role-based authorization and an administration pan
 - JWT authentication
 - Protected frontend routes
 - Protected backend endpoints
+- Frontend form validation
+- Show/hide password controls
 
 ### Movie Collection
 
@@ -290,7 +292,7 @@ MovieTracker/
 Clone the GitHub repository:
 
 ```bash
-git clone <https://github.com/Giorgosbra/MovieTracker.git>
+git clone https://github.com/Giorgosbra/MovieTracker.git
 ```
 
 Move into the project directory:
@@ -433,6 +435,69 @@ http://localhost:5173
 
 ---
 
+# Build
+
+## Frontend Production Build
+
+To create a production build of the React frontend:
+
+```bash
+cd frontend
+npm run build
+```
+
+The generated production files are created inside:
+
+```text
+frontend/dist/
+```
+
+The frontend production build has been verified successfully with Vite.
+
+---
+
+# Deployment / Local Execution
+
+The project is configured to run locally.
+
+The following services must be available:
+
+- MySQL database
+- FastAPI backend
+- React frontend
+
+Start the backend from the project root:
+
+```bash
+uvicorn backend.app.main:app --reload
+```
+
+Start the frontend from the `frontend` directory:
+
+```bash
+npm run dev
+```
+
+The frontend will normally be available at:
+
+```text
+http://localhost:5173
+```
+
+The backend API will normally be available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+Swagger API documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+---
+
 # Running the Application
 
 During development, two terminals are required.
@@ -490,6 +555,10 @@ Authorization: Bearer <access_token>
 ```
 
 The frontend automatically includes the token when communicating with protected backend endpoints.
+
+The login and registration forms also provide frontend validation and show/hide password controls for a better user experience.
+
+Backend validation remains responsible for validating incoming API data.
 
 ---
 
@@ -693,19 +762,13 @@ GET    /admin/users/{user_id}/stats
 DELETE /admin/users/{user_id}
 ```
 
-Administrator endpoints require an authenticated user with the:
-
-```text
-admin
-```
-
-role.
+Administrator endpoints require an authenticated user with the `admin` role.
 
 ---
 
 # Movie Catalogue
 
-The Discover page uses a predefined movie catalogue stored in the React frontend.
+The Discover page uses a predefined catalogue of 63 movies stored in the React frontend.
 
 The catalogue contains movie information such as:
 
@@ -715,6 +778,12 @@ The catalogue contains movie information such as:
 - Genre
 - Poster
 
+The catalogue data is stored in:
+
+```text
+frontend/src/data/movieCatalog.ts
+```
+
 Movie poster images are stored locally in:
 
 ```text
@@ -723,11 +792,11 @@ frontend/public/auth-posters/
 
 Users can browse the catalogue and search movies by title.
 
-When a user adds a movie from the catalogue, its information is sent to the FastAPI backend.
+Movies from the catalogue are not automatically inserted into MySQL. When a user adds a movie to their collection, the frontend sends its information to the FastAPI backend.
 
-If the movie does not already exist in the database, a new shared movie record is created.
+If the movie does not already exist in the `movies` table, a shared movie record is created. If it already exists, the existing record is reused.
 
-The user's personal status and rating are stored separately.
+The user's personal status and rating are stored separately in the `user_movies` table.
 
 ---
 
@@ -882,9 +951,13 @@ The application has been manually tested for multiple normal and edge-case scena
 
 Allows registered users to authenticate.
 
+The form includes frontend validation and a show/hide password control.
+
 ## Register
 
 Allows new users to create an account.
+
+The form includes frontend validation, backend validation error handling, and a show/hide password control.
 
 ## My Movies
 
@@ -983,7 +1056,9 @@ Used when a requested resource does not exist.
 422 Unprocessable Entity
 ```
 
-Used when request data fails validation.
+Used when request data fails backend validation.
+
+Frontend authentication forms also convert validation failures into user-friendly messages instead of displaying raw API validation responses.
 
 ---
 
@@ -1016,7 +1091,7 @@ block is not required for the current application startup process.
 Possible future improvements include:
 
 - External movie API integration
-- Larger and dynamic movie catalogue
+- Dynamic movie catalogue
 - Advanced movie filtering
 - Pagination
 - Movie recommendations
@@ -1034,7 +1109,7 @@ Possible future improvements include:
 
 # Author
 
-MovieTracker was developed as a final project for Coding Factory.
+MovieTracker was developed as a final project for Coding Factory 9.
 
 ---
 
