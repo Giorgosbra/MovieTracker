@@ -31,6 +31,7 @@ function AdminRoute({
 
 
   useEffect(() => {
+    // Request the authenticated user's data to verify the admin role.
     const checkAdmin = async () => {
       try {
         const response =
@@ -42,6 +43,7 @@ function AdminRoute({
           response.data.role === 'admin',
         )
       } catch {
+        // Remove an invalid or expired token and redirect to login.
         localStorage.removeItem(
           'access_token',
         )
@@ -56,6 +58,7 @@ function AdminRoute({
   }, [])
 
 
+  // Display a temporary loading state while the role is being checked.
   if (checking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -67,6 +70,7 @@ function AdminRoute({
   }
 
 
+  // Redirect users whose authentication is no longer valid.
   if (unauthorized) {
     return (
       <Navigate
@@ -80,6 +84,7 @@ function AdminRoute({
   }
 
 
+  // Authenticated non-admin users return to the movies page.
   if (!isAdmin) {
     return (
       <Navigate
@@ -90,11 +95,16 @@ function AdminRoute({
   }
 
 
+  // Render the protected admin page only for administrator accounts.
   return children
 }
 
 
 export default AdminRoute
+
+
+
+
 
 
 

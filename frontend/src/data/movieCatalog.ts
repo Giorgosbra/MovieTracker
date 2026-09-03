@@ -1,3 +1,4 @@
+// Define the structure of each movie stored in the local catalogue.
 export interface CatalogMovie {
   id: number
   title: string
@@ -8,6 +9,8 @@ export interface CatalogMovie {
 }
 
 
+// Local movie catalogue used by the Discover page.
+// Movies are added to the backend database only when a user adds them to their collection.
 export const movieCatalog: CatalogMovie[] = [
   {
     id: 1,

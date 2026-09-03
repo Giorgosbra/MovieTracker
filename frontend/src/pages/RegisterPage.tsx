@@ -4,11 +4,14 @@ import axios from 'axios'
 
 import AuthLayout from '../components/AuthLayout'
 import api from '../services/api'
+
 import type { RegisterData, User } from '../types/user'
+
 
 function RegisterPage() {
   const navigate = useNavigate()
 
+  // Store the values entered in the registration form.
   const [formData, setFormData] = useState<RegisterData>({
     username: '',
     email: '',
@@ -19,6 +22,8 @@ function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
+
+  // Validate the registration form before sending it to the backend.
   const validateForm = () => {
     const username = formData.username.trim()
     const email = formData.email.trim()
@@ -49,11 +54,14 @@ function RegisterPage() {
     return ''
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
 
+  const handleSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault()
     setError('')
 
+    // Stop registration if client-side validation fails.
     const validationError = validateForm()
 
     if (validationError) {
@@ -64,20 +72,26 @@ function RegisterPage() {
     setLoading(true)
 
     try {
+      // Send the validated account data to the registration endpoint.
       await api.post<User>('/auth/register', {
         ...formData,
         username: formData.username.trim(),
         email: formData.email.trim(),
       })
 
+      // Redirect the user to login after successful registration.
       navigate('/login')
+
     } catch (error) {
+      // Handle validation and registration errors returned by the API.
       if (axios.isAxiosError(error)) {
         const detail = error.response?.data?.detail
 
         if (typeof detail === 'string') {
           setError(detail)
+
         } else if (Array.isArray(detail)) {
+          // FastAPI validation errors can contain multiple message objects.
           const messages = detail
             .map((item) => {
               if (
@@ -94,23 +108,31 @@ function RegisterPage() {
 
               return null
             })
-            .filter((message): message is string => message !== null)
+            .filter(
+              (message): message is string =>
+                message !== null,
+            )
 
           setError(
             messages.length > 0
               ? messages.join(' ')
               : 'Registration failed',
           )
+
         } else {
           setError('Registration failed')
         }
+
       } else {
         setError('Something went wrong')
       }
+
     } finally {
+      // Re-enable the submit button after the request is completed.
       setLoading(false)
     }
   }
+
 
   return (
     <AuthLayout showShowcase>
@@ -125,11 +147,13 @@ function RegisterPage() {
           </p>
         </div>
 
+
         {error && (
           <div className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
         )}
+
 
         <form
           onSubmit={handleSubmit}
@@ -153,6 +177,7 @@ function RegisterPage() {
                   ...formData,
                   username: event.target.value,
                 })
+
                 setError('')
               }}
               placeholder="Choose a username"
@@ -160,6 +185,7 @@ function RegisterPage() {
               className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
           </div>
+
 
           <div>
             <label
@@ -178,6 +204,7 @@ function RegisterPage() {
                   ...formData,
                   email: event.target.value,
                 })
+
                 setError('')
               }}
               placeholder="you@example.com"
@@ -185,6 +212,7 @@ function RegisterPage() {
               className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
           </div>
+
 
           <div>
             <label
@@ -204,6 +232,7 @@ function RegisterPage() {
                     ...formData,
                     password: event.target.value,
                   })
+
                   setError('')
                 }}
                 placeholder="Create a password"
@@ -267,17 +296,22 @@ function RegisterPage() {
             </p>
           </div>
 
+
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading
+              ? 'Creating account...'
+              : 'Create account'}
           </button>
         </form>
 
+
         <p className="mt-7 text-sm text-slate-400">
           Already have an account?{' '}
+
           <Link
             to="/login"
             className="font-semibold text-rose-400 transition hover:text-rose-300"
@@ -290,42 +324,5 @@ function RegisterPage() {
   )
 }
 
+
 export default RegisterPage
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

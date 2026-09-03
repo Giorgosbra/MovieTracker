@@ -43,6 +43,7 @@ function DiscoverMoviesPage() {
     useState('')
 
 
+  // Load the authenticated user's current collection from the backend.
   useEffect(() => {
     const loadUserMovies = async () => {
       try {
@@ -57,6 +58,7 @@ function DiscoverMoviesPage() {
           axios.isAxiosError(error) &&
           error.response?.status === 401
         ) {
+          // Remove an invalid or expired token before redirecting to login.
           localStorage.removeItem(
             'access_token',
           )
@@ -77,6 +79,7 @@ function DiscoverMoviesPage() {
   }, [navigate])
 
 
+  // Filter the local movie catalogue using the current search text.
   const filteredMovies =
     movieCatalog.filter((movie) =>
       movie.title
@@ -90,6 +93,7 @@ function DiscoverMoviesPage() {
 
 
   const handleLogout = () => {
+    // Remove the stored JWT token when the user logs out.
     localStorage.removeItem(
       'access_token',
     )
@@ -101,6 +105,7 @@ function DiscoverMoviesPage() {
   const openMovie = (
     movie: CatalogMovie,
   ) => {
+    // Open the details modal for the selected catalogue movie.
     setError('')
     setIsClosing(false)
     setSelectedMovie(movie)
@@ -110,6 +115,7 @@ function DiscoverMoviesPage() {
   const closeMovie = () => {
     setIsClosing(true)
 
+    // Delay state cleanup so the closing animation can finish.
     setTimeout(() => {
       setSelectedMovie(null)
       setIsClosing(false)
@@ -121,6 +127,7 @@ function DiscoverMoviesPage() {
   const getUserMovie = (
     catalogMovie: CatalogMovie,
   ) => {
+    // Match catalogue data with an existing movie in the user's collection.
     return userMovies.find(
       (movie) =>
         movie.title.toLowerCase() ===
@@ -134,6 +141,7 @@ function DiscoverMoviesPage() {
   const handleAddMovie = async (
     movie: CatalogMovie,
   ) => {
+    // Prevent duplicate additions from the frontend.
     if (getUserMovie(movie)) {
       return
     }
@@ -142,6 +150,7 @@ function DiscoverMoviesPage() {
     setError('')
 
     try {
+      // Add the selected catalogue movie to the user's collection.
       const response =
         await api.post<Movie>(
           '/movies',
@@ -157,6 +166,7 @@ function DiscoverMoviesPage() {
           },
         )
 
+      // Update the local collection immediately with the created movie.
       setUserMovies(
         (currentMovies) => [
           ...currentMovies,
@@ -213,6 +223,7 @@ function DiscoverMoviesPage() {
   }
 
 
+  // Check whether the movie currently shown in the modal is already added.
   const selectedUserMovie =
     selectedMovie
       ? getUserMovie(selectedMovie)

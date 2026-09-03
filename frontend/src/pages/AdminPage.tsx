@@ -69,9 +69,11 @@ function AdminPage() {
     useState(false)
 
 
+  // Load the current administrator and the complete user list.
   useEffect(() => {
     const loadAdminData = async () => {
       try {
+        // Fetch administrator information and users in parallel.
         const [
           currentUserResponse,
           usersResponse,
@@ -98,6 +100,7 @@ function AdminPage() {
             error.response?.status ===
             401
           ) {
+            // Remove an invalid or expired token before redirecting to login.
             localStorage.removeItem(
               'access_token',
             )
@@ -110,6 +113,7 @@ function AdminPage() {
             error.response?.status ===
             403
           ) {
+            // Redirect authenticated non-admin users away from the admin panel.
             navigate('/movies')
             return
           }
@@ -128,6 +132,7 @@ function AdminPage() {
 
 
   const handleLogout = () => {
+    // Remove the stored JWT token when the administrator logs out.
     localStorage.removeItem(
       'access_token',
     )
@@ -139,6 +144,7 @@ function AdminPage() {
   const openUser = async (
     user: User,
   ) => {
+    // Open the user details modal and reset previous modal state.
     setError('')
     setStatsError('')
     setSelectedUserStats(null)
@@ -150,6 +156,7 @@ function AdminPage() {
     setStatsLoading(true)
 
     try {
+      // Load the selected user's movie statistics from the admin endpoint.
       const response =
         await api.get<AdminUserStats>(
           `/admin/users/${user.id}/stats`,
@@ -193,12 +200,14 @@ function AdminPage() {
 
 
   const closeUser = () => {
+    // Keep the modal open while a delete request is in progress.
     if (deletingUserId !== null) {
       return
     }
 
     setIsClosing(true)
 
+    // Delay state cleanup so the closing animation can finish.
     setTimeout(() => {
       setSelectedUser(null)
       setSelectedUserStats(null)
@@ -213,6 +222,7 @@ function AdminPage() {
 
 
   const handleDeleteUser = async () => {
+    // A user must be selected before a delete request can be sent.
     if (!selectedUser) {
       return
     }
@@ -224,10 +234,12 @@ function AdminPage() {
     setError('')
 
     try {
+      // Request permanent deletion of the selected user account.
       await api.delete(
         `/admin/users/${selectedUser.id}`,
       )
 
+      // Remove the deleted account from the local user list.
       setUsers(
         (currentUsers) =>
           currentUsers.filter(
@@ -291,6 +303,7 @@ function AdminPage() {
   }
 
 
+  // Calculate summary counts displayed at the top of the admin panel.
   const adminCount =
     users.filter(
       (user) =>

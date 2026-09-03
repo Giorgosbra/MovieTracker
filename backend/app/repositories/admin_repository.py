@@ -6,11 +6,27 @@ from backend.app.models.user_movie import UserMovie
 
 
 class AdminRepository:
+    """
+    Repository responsible for administrator database operations.
+    """
+
     def __init__(self, session: Session):
+        """
+        Initialize the repository with an active database session.
+
+        Parameters:
+        session (Session): The SQLModel database session.
+        """
         self.session = session
 
 
     def get_all_users(self):
+        """
+        Retrieve all registered users from the database.
+
+        Returns:
+        list[User]: A list containing all registered users.
+        """
         statement = select(User)
 
         return list(
@@ -22,6 +38,15 @@ class AdminRepository:
         self,
         user_id: int,
     ):
+        """
+        Retrieve a user from the database by ID.
+
+        Parameters:
+        user_id (int): The ID of the user.
+
+        Returns:
+        User | None: The matching user if found, otherwise None.
+        """
         return self.session.get(
             User,
             user_id,
@@ -32,6 +57,18 @@ class AdminRepository:
         self,
         user_id: int,
     ) -> list[tuple[Movie, UserMovie]]:
+        """
+        Retrieve the movies and personal movie data of a specific user.
+
+        Parameters:
+        user_id (int): The ID of the user.
+
+        Returns:
+        list[tuple[Movie, UserMovie]]: A list containing shared movie data
+                                      together with the user's personal
+                                      status and rating.
+        """
+        # Join Movie with UserMovie to retrieve the user's movie activity.
         statement = (
             select(Movie, UserMovie)
             .join(
@@ -54,6 +91,17 @@ class AdminRepository:
         self,
         user_id: int,
     ):
+        """
+        Delete all movie relations that belong to a specific user.
+
+        Parameters:
+        user_id (int): The ID of the user whose movie relations
+                       should be deleted.
+
+        Returns:
+        None
+        """
+        # Retrieve all UserMovie records that belong to the user.
         statement = (
             select(UserMovie)
             .where(
@@ -67,11 +115,13 @@ class AdminRepository:
             ).all()
         )
 
+        # Delete each personal movie relation before deleting the user.
         for user_movie in user_movies:
             self.session.delete(
                 user_movie,
             )
 
+        # Apply the pending deletions before the user record is removed.
         self.session.flush()
 
 
@@ -79,8 +129,32 @@ class AdminRepository:
         self,
         user: User,
     ):
+        """
+        Delete a user from the database.
+
+        Parameters:
+        user (User): The user account to delete.
+
+        Returns:
+        None
+        """
         self.session.delete(user)
         self.session.commit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

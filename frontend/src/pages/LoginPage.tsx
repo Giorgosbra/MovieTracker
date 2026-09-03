@@ -4,12 +4,14 @@ import axios from 'axios'
 
 import AuthLayout from '../components/AuthLayout'
 import api from '../services/api'
+
 import type { LoginData, TokenResponse } from '../types/user'
 
 
 function LoginPage() {
   const navigate = useNavigate()
 
+  // Store the values entered in the login form.
   const [formData, setFormData] = useState<LoginData>({
     email: '',
     password: '',
@@ -20,6 +22,7 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
 
+  // Validate the login form before sending a request to the backend.
   const validateForm = () => {
     const email = formData.email.trim()
     const password = formData.password
@@ -46,9 +49,9 @@ function LoginPage() {
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault()
-
     setError('')
 
+    // Stop the login process if client-side validation fails.
     const validationError = validateForm()
 
     if (validationError) {
@@ -59,6 +62,7 @@ function LoginPage() {
     setLoading(true)
 
     try {
+      // Send the user's credentials to the authentication endpoint.
       const response = await api.post<TokenResponse>(
         '/auth/login',
         {
@@ -67,19 +71,25 @@ function LoginPage() {
         },
       )
 
+      // Store the JWT so it can be attached to future API requests.
       localStorage.setItem(
         'access_token',
         response.data.access_token,
       )
 
+      // Redirect the authenticated user to their movie collection.
       navigate('/movies')
+
     } catch (error) {
+      // Handle validation and authentication errors returned by the API.
       if (axios.isAxiosError(error)) {
         const detail = error.response?.data?.detail
 
         if (typeof detail === 'string') {
           setError(detail)
+
         } else if (Array.isArray(detail)) {
+          // FastAPI validation errors can contain multiple message objects.
           const messages = detail
             .map((item) => {
               if (
@@ -106,13 +116,17 @@ function LoginPage() {
               ? messages.join(' ')
               : 'Login failed',
           )
+
         } else {
           setError('Login failed')
         }
+
       } else {
         setError('Something went wrong')
       }
+
     } finally {
+      // Re-enable the submit button after the request is completed.
       setLoading(false)
     }
   }
@@ -120,11 +134,8 @@ function LoginPage() {
 
   return (
     <AuthLayout showShowcase>
-
       <div>
-
         <div className="mb-10">
-
           <h2 className="text-4xl font-bold">
             Welcome back
           </h2>
@@ -132,7 +143,6 @@ function LoginPage() {
           <p className="mt-3 text-base text-slate-400">
             Sign in to continue tracking your movies.
           </p>
-
         </div>
 
 
@@ -148,9 +158,7 @@ function LoginPage() {
           noValidate
           className="space-y-6"
         >
-
           <div>
-
             <label
               htmlFor="email"
               className="mb-2 block text-sm font-medium text-slate-300"
@@ -167,18 +175,17 @@ function LoginPage() {
                   ...formData,
                   email: event.target.value,
                 })
+
                 setError('')
               }}
               placeholder="you@example.com"
               autoComplete="email"
               className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-4 text-base text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
             />
-
           </div>
 
 
           <div>
-
             <label
               htmlFor="password"
               className="mb-2 block text-sm font-medium text-slate-300"
@@ -187,7 +194,6 @@ function LoginPage() {
             </label>
 
             <div className="relative">
-
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -197,13 +203,13 @@ function LoginPage() {
                     ...formData,
                     password: event.target.value,
                   })
+
                   setError('')
                 }}
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-5 py-4 pr-14 text-base text-white outline-none transition placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
               />
-
 
               <button
                 type="button"
@@ -222,7 +228,6 @@ function LoginPage() {
                 }
                 className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-rose-400"
               >
-
                 {showPassword ? (
                   <svg
                     viewBox="0 0 24 24"
@@ -254,11 +259,8 @@ function LoginPage() {
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 )}
-
               </button>
-
             </div>
-
           </div>
 
 
@@ -271,7 +273,6 @@ function LoginPage() {
               ? 'Signing in...'
               : 'Sign in'}
           </button>
-
         </form>
 
 
@@ -285,43 +286,10 @@ function LoginPage() {
             Create an account
           </Link>
         </p>
-
       </div>
-
     </AuthLayout>
   )
 }
 
 
 export default LoginPage
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

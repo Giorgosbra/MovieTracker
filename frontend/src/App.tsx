@@ -19,6 +19,7 @@ function App() {
   return (
     <Routes>
 
+      {/* Redirect the root URL to the login page. */}
       <Route
         path="/"
         element={
@@ -30,11 +31,11 @@ function App() {
       />
 
 
+      {/* Public authentication routes. */}
       <Route
         path="/login"
         element={<LoginPage />}
       />
-
 
       <Route
         path="/register"
@@ -42,6 +43,7 @@ function App() {
       />
 
 
+      {/* Routes available only to authenticated users. */}
       <Route
         path="/movies"
         element={
@@ -51,7 +53,6 @@ function App() {
         }
       />
 
-
       <Route
         path="/discover"
         element={
@@ -60,7 +61,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-
 
       <Route
         path="/profile"
@@ -72,6 +72,7 @@ function App() {
       />
 
 
+      {/* Admin route requires both authentication and administrator access. */}
       <Route
         path="/admin"
         element={
@@ -84,6 +85,7 @@ function App() {
       />
 
 
+      {/* Redirect unknown routes to login. */}
       <Route
         path="*"
         element={
@@ -100,26 +102,3 @@ function App() {
 
 
 export default App
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

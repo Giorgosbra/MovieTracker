@@ -4,11 +4,14 @@ import {
   type ReactNode,
 } from 'react'
 
+
 interface AuthLayoutProps {
   children: ReactNode
   showShowcase?: boolean
 }
 
+
+// Movie slides displayed on the authentication pages.
 const slides = [
   {
     image: '/auth-posters/interstellar.jpg',
@@ -26,9 +29,9 @@ const slides = [
     subtitle: 'Never forget what you want to watch next.',
   },
   {
-  image: '/auth-posters/project_hail_mary.jpg',
-  title: 'Explore something new',
-  subtitle: 'Keep track of every movie that catches your attention.',
+    image: '/auth-posters/project_hail_mary.jpg',
+    title: 'Explore something new',
+    subtitle: 'Keep track of every movie that catches your attention.',
   },
   {
     image: '/auth-posters/odyssey.jpg',
@@ -42,25 +45,36 @@ const slides = [
   },
 ]
 
+
 function AuthLayout({
   children,
   showShowcase = false,
 }: AuthLayoutProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
 
+
   useEffect(() => {
+    // Do not start the slideshow when the showcase is disabled.
     if (!showShowcase) {
       return
     }
 
+    // Automatically move to the next movie slide every eight seconds.
     const interval = setInterval(() => {
-      setCurrentSlide((current) => (current + 1) % slides.length)
+      setCurrentSlide(
+        (current) =>
+          (current + 1) % slides.length,
+      )
     }, 8000)
 
+    // Clear the interval when the component is unmounted.
     return () => clearInterval(interval)
   }, [showShowcase])
 
+
+  // Retrieve the content of the currently active slide.
   const current = slides[currentSlide]
+
 
   return (
     <div className="min-h-screen overflow-hidden bg-slate-950 text-white">
@@ -73,36 +87,51 @@ function AuthLayout({
       >
         {/* Left side */}
         <div className="relative flex items-center justify-center overflow-hidden px-8 py-12 lg:px-20">
-          {/* stronger red glow */}
+
+          {/* Background glow */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(225,29,72,0.24),_transparent_38%)]" />
+
           <div className="absolute left-[-80px] top-[-80px] h-72 w-72 rounded-full bg-rose-600/18 blur-3xl" />
+
           <div className="absolute bottom-[-160px] left-[-100px] h-80 w-80 rounded-full bg-violet-700/10 blur-3xl" />
+
 
           <div className="relative z-10 w-full max-w-lg">
             <div className="mb-12">
+
               <h1 className="text-5xl font-black tracking-tight lg:text-6xl">
                 Movie
-                <span className="text-rose-500">Tracker</span>
+                <span className="text-rose-500">
+                  Tracker
+                </span>
               </h1>
+
 
               <p className="mt-4 text-base text-slate-400">
                 Your movies. Your ratings. Your watchlist.
               </p>
+
             </div>
+
 
             {children}
           </div>
+
         </div>
+
 
         {/* Right showcase */}
         {showShowcase && (
           <div className="relative hidden min-h-screen overflow-hidden lg:block">
-            {/* blurred background slideshow */}
+
+            {/* Blurred background slideshow */}
             {slides.map((slide, index) => (
               <div
                 key={`bg-${slide.image}`}
                 className={`absolute inset-0 scale-110 bg-cover bg-center transition-opacity duration-[2600ms] ease-in-out ${
-                  index === currentSlide ? 'opacity-100' : 'opacity-0'
+                  index === currentSlide
+                    ? 'opacity-100'
+                    : 'opacity-0'
                 }`}
                 style={{
                   backgroundImage: `url(${slide.image})`,
@@ -111,16 +140,23 @@ function AuthLayout({
               />
             ))}
 
-            {/* dark overlays */}
+
+            {/* Dark overlays */}
             <div className="absolute inset-0 bg-slate-950/55" />
+
             <div className="absolute inset-y-0 left-0 z-10 w-56 bg-gradient-to-r from-slate-950 via-slate-950/72 to-transparent" />
+
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_25%,_rgba(2,6,23,0.45)_100%)]" />
 
-            {/* content layout */}
+
+            {/* Content layout */}
             <div className="relative z-20 flex min-h-screen flex-col">
-              {/* poster zone */}
+
+              {/* Poster zone */}
               <div className="flex flex-1 items-center justify-center px-10 pt-8">
+
                 <div className="relative flex h-[72vh] w-full max-w-[620px] items-center justify-center">
+
                   {slides.map((slide, index) => (
                     <img
                       key={slide.image}
@@ -143,11 +179,15 @@ function AuthLayout({
                       }}
                     />
                   ))}
+
                 </div>
+
               </div>
 
-              {/* text zone below poster */}
+
+              {/* Text zone below poster */}
               <div className="px-16 pb-12">
+
                 <div
                   key={current.title}
                   className="transition-all duration-700 ease-out"
@@ -156,17 +196,24 @@ function AuthLayout({
                     {current.title}
                   </h2>
 
+
                   <p className="mt-3 max-w-xl text-base text-slate-300">
                     {current.subtitle}
                   </p>
+
                 </div>
 
+
+                {/* Manual slideshow navigation */}
                 <div className="mt-7 flex items-center gap-2">
+
                   {slides.map((_, index) => (
                     <button
                       key={index}
                       type="button"
-                      onClick={() => setCurrentSlide(index)}
+                      onClick={() =>
+                        setCurrentSlide(index)
+                      }
                       aria-label={`Movie slide ${index + 1}`}
                       className={
                         index === currentSlide
@@ -175,19 +222,20 @@ function AuthLayout({
                       }
                     />
                   ))}
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
         )}
+
       </div>
     </div>
   )
 }
 
+
 export default AuthLayout
-
-
-
-
-

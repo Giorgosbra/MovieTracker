@@ -1,3 +1,4 @@
+// Movie data returned by the backend API.
 export interface Movie {
   id: number
   title: string
@@ -8,6 +9,8 @@ export interface Movie {
   personal_rating: number | null
 }
 
+
+// Data sent when adding a movie to the user's collection.
 export interface MovieCreate {
   title: string
   description?: string
@@ -17,9 +20,9 @@ export interface MovieCreate {
   personal_rating?: number | null
 }
 
+
+// Fields that can be changed for an existing movie entry.
 export interface MovieUpdate {
   status?: string
   personal_rating?: number | null
 }
-
-

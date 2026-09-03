@@ -14,6 +14,7 @@ import type {
 function MoviesPage() {
   const navigate = useNavigate()
 
+  // Store the user's movie collection and the state of the details modal.
   const [movies, setMovies] =
     useState<Movie[]>([])
 
@@ -56,6 +57,7 @@ function MoviesPage() {
 
 
   useEffect(() => {
+    // Load the authenticated user's movie collection when the page opens.
     const loadMovies = async () => {
       try {
         const response =
@@ -65,6 +67,7 @@ function MoviesPage() {
 
         setMovies(response.data)
       } catch (error) {
+        // Redirect to login when the stored token is invalid or expired.
         if (
           axios.isAxiosError(error) &&
           error.response?.status === 401
@@ -89,6 +92,7 @@ function MoviesPage() {
   }, [navigate])
 
 
+  // Remove the stored token and end the current frontend session.
   const handleLogout = () => {
     localStorage.removeItem(
       'access_token',
@@ -98,6 +102,7 @@ function MoviesPage() {
   }
 
 
+  // Match a database movie with its poster from the local movie catalog.
   const getPoster = (
     movie: Movie,
   ) => {
@@ -114,6 +119,7 @@ function MoviesPage() {
   }
 
 
+  // Open the details modal and initialize its editable values.
   const openMovie = (
     movie: Movie,
   ) => {
@@ -137,6 +143,7 @@ function MoviesPage() {
   }
 
 
+  // Close the modal after its exit animation finishes.
   const closeMovie = () => {
     if (saving || removing) {
       return
@@ -154,6 +161,7 @@ function MoviesPage() {
   }
 
 
+  // Copy the selected movie values into the edit controls.
   const startEditing = () => {
     if (!selectedMovie) {
       return
@@ -182,6 +190,7 @@ function MoviesPage() {
   }
 
 
+  // Adjust ratings in 0.5 steps while keeping them between 0 and 10.
   const decreaseRating = () => {
     if (editStatus !== 'watched') {
       return
@@ -216,6 +225,7 @@ function MoviesPage() {
   }
 
 
+  // Save the user's status and personal rating through the API.
   const handleSave = async () => {
     if (!selectedMovie) {
       return
@@ -224,6 +234,7 @@ function MoviesPage() {
     setActionError('')
 
 
+    // A watchlist movie cannot keep a personal rating.
     const movieData: MovieUpdate = {
       status: editStatus,
 
@@ -248,6 +259,7 @@ function MoviesPage() {
         response.data
 
 
+      // Replace the updated movie in local state without reloading the page.
       setMovies(
         (currentMovies) =>
           currentMovies.map(
@@ -302,6 +314,7 @@ function MoviesPage() {
   }
 
 
+  // Remove the movie from the authenticated user's collection.
   const handleRemove = async () => {
     if (!selectedMovie) {
       return
@@ -317,6 +330,7 @@ function MoviesPage() {
       )
 
 
+      // Remove the deleted movie from local state immediately.
       setMovies(
         (currentMovies) =>
           currentMovies.filter(

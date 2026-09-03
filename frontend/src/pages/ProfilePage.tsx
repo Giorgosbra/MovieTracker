@@ -24,9 +24,11 @@ function ProfilePage() {
     useState('')
 
 
+  // Load the authenticated user's account data and movie collection.
   useEffect(() => {
     const loadProfile = async () => {
       try {
+        // Fetch profile and movie data in parallel.
         const [
           userResponse,
           moviesResponse,
@@ -42,6 +44,7 @@ function ProfilePage() {
           axios.isAxiosError(error) &&
           error.response?.status === 401
         ) {
+          // Remove an invalid or expired token before redirecting to login.
           localStorage.removeItem(
             'access_token',
           )
@@ -63,6 +66,7 @@ function ProfilePage() {
 
 
   const handleLogout = () => {
+    // Remove the stored JWT token when the user logs out.
     localStorage.removeItem(
       'access_token',
     )
@@ -71,6 +75,7 @@ function ProfilePage() {
   }
 
 
+  // Separate watched movies from movies that are still in the watchlist.
   const watchedMovies =
     movies.filter(
       (movie) =>
@@ -85,6 +90,7 @@ function ProfilePage() {
     )
 
 
+  // Use only watched movies that have a personal rating.
   const ratedMovies =
     watchedMovies.filter(
       (movie) =>
@@ -92,6 +98,7 @@ function ProfilePage() {
     )
 
 
+  // Calculate the user's average rating when rated movies are available.
   const averageRating =
     ratedMovies.length > 0
       ? ratedMovies.reduce(
@@ -103,11 +110,13 @@ function ProfilePage() {
       : null
 
 
+  // Find the genre that appears most often in the user's collection.
   const favoriteGenre = (() => {
     if (movies.length === 0) {
       return null
     }
 
+    // Count how many movies belong to each genre.
     const genreCounts: Record<
       string,
       number
